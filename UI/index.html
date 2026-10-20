@@ -1,0 +1,625 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Expense Tracker</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1e293b;
+        }
+
+        header {
+            background: #172554;
+            color: white;
+            padding: 24px 6%;
+        }
+
+        header h1 {
+            font-size: 26px;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: #cbd5e1;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .card, .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 3px 15px #0f172a0d;
+        }
+
+        .card p {
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+
+        .card h2 {
+            font-size: 30px;
+            color: #172554;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 320px minmax(0, 1fr);
+            gap: 20px;
+            align-items: start;
+        }
+
+        .panel h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            margin: 14px 0 7px;
+            color: #475569;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font-size: 15px;
+            background: white;
+        }
+
+        button {
+            border: none;
+            border-radius: 7px;
+            padding: 11px 15px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .primary {
+            width: 100%;
+            margin-top: 20px;
+            background: #2563eb;
+            color: white;
+            font-weight: bold;
+        }
+
+        .primary:hover {
+            background: #1d4ed8;
+        }
+
+        .edit {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        #cancelEditButton {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .message {
+            font-size: 14px;
+            margin-top: 12px;
+            overflow-wrap: anywhere;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 520px;
+        }
+
+        th, td {
+            padding: 13px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        th {
+            color: #64748b;
+            background: #f8fafc;
+        }
+
+        .category {
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .delete {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .empty {
+            color: #64748b;
+            padding: 25px 0;
+            text-align: center;
+        }
+
+        .status {
+            margin-bottom: 18px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        @media (max-width: 800px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .summary {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 22px;
+            }
+
+            main {
+                padding: 0 12px;
+            }
+
+            .card, .panel {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Smart Expense Tracker</h1>
+        <p>Track your spending. Manage your money.</p>
+    </header>
+
+    <main>
+        <p class="status" id="status">Connecting to your API...</p>
+
+        <section class="summary">
+            <div class="card">
+                <p>Total Spending</p>
+                <h2 id="totalSpending">₹0.00</h2>
+            </div>
+
+            <div class="card">
+                <p>Total Expenses</p>
+                <h2 id="totalExpenses">0</h2>
+            </div>
+        </section>
+
+        <section class="content">
+            <div class="panel">
+                <h2 id="formTitle">Add an Expense</h2>
+
+                <form id="expenseForm">
+                    <label for="title">Expense title</label>
+                    <input
+                        id="title"
+                        type="text"
+                        maxlength="100"
+                        placeholder="e.g. Lunch"
+                        required
+                    >
+
+                    <label for="amount">Amount (₹)</label>
+                    <input
+                        id="amount"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="e.g. 150"
+                        required
+                    >
+
+                    <label for="category">Category</label>
+                    <select id="category" required>
+                        <option value="">Select category</option>
+                        <option>Food</option>
+                        <option>Travel</option>
+                        <option>Shopping</option>
+                        <option>Education</option>
+                        <option>Bills</option>
+                        <option>Health</option>
+                        <option>Entertainment</option>
+                        <option>Other</option>
+                    </select>
+
+                    <label for="expenseDate">Date</label>
+                    <input id="expenseDate" type="date" required>
+
+                    <button
+                        class="primary"
+                        id="submitButton"
+                        type="submit"
+                    >
+                        + Add Expense
+                    </button>
+
+                    <button
+                        class="edit"
+                        id="cancelEditButton"
+                        type="button"
+                        hidden
+                    >
+                        Cancel Edit
+                    </button>
+
+                    <p class="message" id="formMessage" role="status"></p>
+                </form>
+            </div>
+
+            <div class="panel">
+                <h2>Recent Transactions</h2>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="expenseTable">
+                            <tr>
+                                <td colspan="5" class="empty">
+                                    Loading expenses...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+
+        const form = document.getElementById("expenseForm");
+        const formTitle = document.getElementById("formTitle");
+        const formMessage = document.getElementById("formMessage");
+        const expenseTable = document.getElementById("expenseTable");
+        const statusText = document.getElementById("status");
+        const submitButton = document.getElementById("submitButton");
+        const cancelEditButton = document.getElementById("cancelEditButton");
+
+        // null means we are adding a new expense.
+        // A number means we are editing an existing expense.
+        let editingExpenseId = null;
+
+        // Set today's date.
+        function setTodayDate() {
+            const today = new Date();
+            const localDate = new Date(
+                today.getTime() - today.getTimezoneOffset() * 60000
+            ).toISOString().slice(0, 10);
+
+            document.getElementById("expenseDate").value = localDate;
+        }
+
+        setTodayDate();
+
+        // Format amounts as Indian rupees.
+        function formatMoney(amount) {
+            return Number(amount).toLocaleString("en-IN", {
+                style: "currency",
+                currency: "INR"
+            });
+        }
+
+        // Safely create a table cell.
+        function addCell(row, value) {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+            return cell;
+        }
+
+        // Load expenses and summary from FastAPI.
+        async function loadExpenses() {
+            try {
+                const [expensesResponse, summaryResponse] =
+                    await Promise.all([
+                        fetch(`${API_URL}/expenses`),
+                        fetch(`${API_URL}/reports/summary`)
+                    ]);
+
+                if (!expensesResponse.ok || !summaryResponse.ok) {
+                    throw new Error("The API returned an error.");
+                }
+
+                const expenseData = await expensesResponse.json();
+                const summaryData = await summaryResponse.json();
+
+                document.getElementById("totalSpending").textContent =
+                    formatMoney(summaryData.total_spending);
+
+                document.getElementById("totalExpenses").textContent =
+                    summaryData.total_expenses;
+
+                expenseTable.replaceChildren();
+
+                if (expenseData.expenses.length === 0) {
+                    const row = document.createElement("tr");
+                    const cell = addCell(row, "No expenses yet. Add one!");
+                    cell.colSpan = 5;
+                    cell.className = "empty";
+                    expenseTable.appendChild(row);
+                } else {
+                    expenseData.expenses.forEach(expense => {
+                        const row = document.createElement("tr");
+
+                        addCell(row, expense.title);
+
+                        const categoryCell = addCell(row, "");
+                        const tag = document.createElement("span");
+                        tag.className = "category";
+                        tag.textContent = expense.category;
+                        categoryCell.appendChild(tag);
+
+                        addCell(row, expense.expense_date);
+                        addCell(row, formatMoney(expense.amount));
+
+                        const actionCell = document.createElement("td");
+                        const actions = document.createElement("div");
+                        actions.className = "actions";
+
+                        // Edit button.
+                        const editButton = document.createElement("button");
+                        editButton.textContent = "Edit";
+                        editButton.className = "edit";
+
+                        editButton.addEventListener("click", () => {
+                            editExpense(expense);
+                        });
+
+                        // Delete button.
+                        const deleteButton = document.createElement("button");
+                        deleteButton.textContent = "Delete";
+                        deleteButton.className = "delete";
+
+                        deleteButton.addEventListener("click", () => {
+                            deleteExpense(expense.id);
+                        });
+
+                        actions.appendChild(editButton);
+                        actions.appendChild(deleteButton);
+                        actionCell.appendChild(actions);
+                        row.appendChild(actionCell);
+                        expenseTable.appendChild(row);
+                    });
+                }
+
+                statusText.textContent = "Connected to API successfully.";
+                statusText.style.color = "#15803d";
+
+            } catch (error) {
+                statusText.textContent =
+                    "Could not connect to the API. Check that your backend is running.";
+                statusText.style.color = "#b91c1c";
+
+                expenseTable.replaceChildren();
+
+                const row = document.createElement("tr");
+                const cell = addCell(
+                    row,
+                    "Unable to load expenses. Please check your backend."
+                );
+
+                cell.colSpan = 5;
+                cell.className = "empty";
+                expenseTable.appendChild(row);
+            }
+        }
+
+        // Add a new expense or update an existing expense.
+        form.addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            formMessage.textContent = editingExpenseId === null
+                ? "Saving expense..."
+                : "Updating expense...";
+
+            formMessage.style.color = "#64748b";
+            submitButton.disabled = true;
+
+            const expense = {
+                title: document.getElementById("title").value.trim(),
+                amount: Number(document.getElementById("amount").value),
+                category: document.getElementById("category").value,
+                expense_date: document.getElementById("expenseDate").value
+            };
+
+            // Remember the mode before resetting the form.
+            const wasEditing = editingExpenseId !== null;
+
+            const url = wasEditing
+                ? `${API_URL}/expenses/${editingExpenseId}`
+                : `${API_URL}/expenses`;
+
+            const method = wasEditing ? "PUT" : "POST";
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(expense)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    const detail = Array.isArray(result.detail)
+                        ? result.detail.map(item => item.msg).join(", ")
+                        : result.detail;
+
+                    throw new Error(detail || "Could not save expense.");
+                }
+
+                form.reset();
+                editingExpenseId = null;
+
+                submitButton.textContent = "+ Add Expense";
+                formTitle.textContent = "Add an Expense";
+                cancelEditButton.hidden = true;
+
+                setTodayDate();
+
+                formMessage.textContent = wasEditing
+                    ? "Expense updated successfully!"
+                    : "Expense added successfully!";
+
+                formMessage.style.color = "#15803d";
+
+                await loadExpenses();
+
+            } catch (error) {
+                formMessage.textContent = error.message;
+                formMessage.style.color = "#b91c1c";
+
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+
+        // Fill the form with the selected expense.
+        function editExpense(expense) {
+            editingExpenseId = expense.id;
+
+            document.getElementById("title").value = expense.title;
+            document.getElementById("amount").value = expense.amount;
+            document.getElementById("category").value = expense.category;
+            document.getElementById("expenseDate").value =
+                expense.expense_date;
+
+            submitButton.textContent = "Update Expense";
+            formTitle.textContent = "Edit Expense";
+            cancelEditButton.hidden = false;
+
+            formMessage.textContent = `Editing expense #${expense.id}`;
+            formMessage.style.color = "#2563eb";
+
+            form.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+        }
+
+        // Cancel editing and return to add mode.
+        cancelEditButton.addEventListener("click", function() {
+            form.reset();
+            editingExpenseId = null;
+
+            submitButton.textContent = "+ Add Expense";
+            formTitle.textContent = "Add an Expense";
+            cancelEditButton.hidden = true;
+
+            setTodayDate();
+
+            formMessage.textContent = "Edit cancelled.";
+            formMessage.style.color = "#64748b";
+        });
+
+        // Delete an expense.
+        async function deleteExpense(id) {
+            if (!confirm("Are you sure you want to delete this expense?")) {
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `${API_URL}/expenses/${id}`,
+                    { method: "DELETE" }
+                );
+
+                if (!response.ok) {
+                    let message = "Could not delete the expense.";
+
+                    try {
+                        const result = await response.json();
+                        message = result.detail || message;
+                    } catch {
+                        // Keep the default error message.
+                    }
+
+                    throw new Error(message);
+                }
+
+                // If the deleted expense was being edited, exit edit mode.
+                if (editingExpenseId === id) {
+                    form.reset();
+                    editingExpenseId = null;
+                    submitButton.textContent = "+ Add Expense";
+                    formTitle.textContent = "Add an Expense";
+                    cancelEditButton.hidden = true;
+                    setTodayDate();
+                }
+
+                formMessage.textContent = "Expense deleted successfully!";
+                formMessage.style.color = "#15803d";
+
+                await loadExpenses();
+
+            } catch (error) {
+                formMessage.textContent = error.message;
+                formMessage.style.color = "#b91c1c";
+            }
+        }
+
+        // Load existing data when the page opens.
+        loadExpenses();
+    </script>
+</body>
+</html>
